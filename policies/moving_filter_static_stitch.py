@@ -67,13 +67,7 @@ def policy(time_index, cell_tower_ids, cell_tower_locations, edge_node_tree, met
 
     for current_time in tqdm(range(min_t, max_t + 1)):
         current_car_positions = time_index_[current_time]
-        for car_id, position in current_car_positions.items():
-            # ### if car is previously unseen, place filter function on an edge node
-            # if car_id not in filter_function_vehicle_node_map:
-            #     _, closest_node = edge_node_tree.query(np.array([list(position)]))
-            #     filter_node_id = closest_node[0][0]
-            #     filter_function_vehicle_node_map[car_id] = filter_node_id
-                
+        for car_id, position in current_car_positions.items():                
             # add data to links
             _, node = edge_node_tree.query(np.array([list(position)]))
             filter_node = node[0][0]
