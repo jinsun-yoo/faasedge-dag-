@@ -13,6 +13,7 @@ var nodeInfoMap = map[string]*NodeInfo {
 
 var Scheduler = BaseScheduler{}
 var baseFaasWrapper = BaseFaaSWrapper{}
+var vDagList = make(map[string]*VDag)
 
 type BaseScheduler struct{}
 
@@ -30,6 +31,8 @@ func (bs *BaseScheduler) ScheduleDag(vDag *VDag) {
 		vDag.PDagMap[function.Name] = append(vDag.PDagMap[function.Name], pDagDeployment)
 		currNode = (currNode + 1) % len(nodeInfoMap)
 	}
+
+	vDagList[vDag.ClientId] = vDag
 }
 
 type BaseFaaSWrapper struct{}
@@ -48,12 +51,7 @@ type NodeInfo struct {
 
 type VDag struct {
 	ClientId string
-
-	// Definition of the Dag, defined by the user only once at the very beginning. This is the definition we added last week.
 	DagDefinition dag.Dag
-
-	// Map from function name to a list of pDagDeployment objects.
-	// The reason we have map[string][]*pDagDeployment instead of map[string]*pDagDeployment is because one vDAG could be mapped to multiple pDAGs.
 	PDagMap map[string][]*PDagDeployment
 }
 
@@ -64,11 +62,9 @@ type PDagDeployment struct {
 }
 
 type DagScheduler interface {
-	// For Each function in the vDAG, will assign a physical container to the function.
 	ScheduleDag(vdag *VDag)
 }
 
 type FaaSWrapper interface {
-	// Tells the node in node to deploy a container for this function.
 	DeployFunction(functionName string, node *NodeInfo) *PDagDeployment
 }

@@ -11,7 +11,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Define a struct for your API response
 type AddDagResponse struct {
 	Message string `json:"message"`
 }
@@ -26,11 +25,6 @@ func main() {
 }
 
 func scheduleDagHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-		return
-	}
-
 	clientId := r.Header.Get("Client-Id")
 	if clientId == "" {
 		http.Error(w, "Client-Id header is missing", http.StatusBadRequest)
