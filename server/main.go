@@ -6,6 +6,7 @@ import (
 	"faasedge-dag/server/scheduler"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"gopkg.in/yaml.v2"
@@ -35,6 +36,7 @@ func scheduleDagHandler(w http.ResponseWriter, r *http.Request) {
 	dagName := queryParameters.Get("dagName")
 
 	if dagName == "" {
+		log.Println("dagName query parameter is missing")
 		http.Error(w, "dagName query parameter is missing", http.StatusBadRequest)
 		return
 	}
@@ -46,22 +48,22 @@ func scheduleDagHandler(w http.ResponseWriter, r *http.Request) {
 			PDagMap:       make(map[string][]*scheduler.PDagDeployment),
 		}
 
-		scheduler.Scheduler.ScheduleDag(vdag)
+		scheduleResponse := scheduler.Scheduler.ScheduleDag(vdag)
 
-		w.Header().Set("Content-Type", "application/json")
-		response := struct {
-			Message string `json:"message"`
-		}{
-			Message: "DAG scheduled successfully",
-		}
-
-		jsonResponse, err := json.Marshal(response)
+		yamlData, err := yaml.Marshal(scheduleResponse)
 		if err != nil {
-			http.Error(w, "Error marshalling response", http.StatusInternalServerError)
-			return
+				http.Error(w, "Failed to marshal YAML", http.StatusInternalServerError)
+				return
 		}
 
-		w.Write(jsonResponse)
+		w.Header().Set("Content-Type", "application/x-yaml")
+
+		_, err = w.Write(yamlData)
+		if err != nil {
+				http.Error(w, "Failed to write response", http.StatusInternalServerError)
+				return
+		}
+
 	} else {
 		http.Error(w, "DAG not found", http.StatusNotFound)
 	}

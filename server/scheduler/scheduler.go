@@ -17,7 +17,7 @@ var vDagList = make(map[string]*VDag)
 
 type BaseScheduler struct{}
 
-func (bs *BaseScheduler) ScheduleDag(vDag *VDag) {
+func (bs *BaseScheduler) ScheduleDag(vDag *VDag) map[string]string {
 	keys := make([]string, 0, len(nodeInfoMap))
 	for k := range nodeInfoMap {
 		keys = append(keys, k)
@@ -25,14 +25,18 @@ func (bs *BaseScheduler) ScheduleDag(vDag *VDag) {
 
 	currNode := 0
 
+	res := make(map[string]string)
+
 	for _, function := range vDag.DagDefinition.Functions {
 		nodeInfo := nodeInfoMap[keys[currNode]]
 		pDagDeployment := baseFaasWrapper.DeployFunction(function.Name, nodeInfo)
+		res[function.Name] = pDagDeployment.Node.IpAddr + ":"+ pDagDeployment.ContainerPort
 		vDag.PDagMap[function.Name] = append(vDag.PDagMap[function.Name], pDagDeployment)
 		currNode = (currNode + 1) % len(nodeInfoMap)
 	}
 
 	vDagList[vDag.ClientId] = vDag
+	return res
 }
 
 type BaseFaaSWrapper struct{}
@@ -62,7 +66,7 @@ type PDagDeployment struct {
 }
 
 type DagScheduler interface {
-	ScheduleDag(vdag *VDag)
+	ScheduleDag(vdag *VDag) map[string]string
 }
 
 type FaaSWrapper interface {
