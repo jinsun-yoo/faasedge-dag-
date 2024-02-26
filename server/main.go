@@ -31,9 +31,11 @@ func scheduleDagHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dagName := r.Header.Get("dag-name")
+	queryParameters := r.URL.Query()
+	dagName := queryParameters.Get("dagName")
+
 	if dagName == "" {
-		http.Error(w, "dag-name header is missing", http.StatusBadRequest)
+		http.Error(w, "dagName query parameter is missing", http.StatusBadRequest)
 		return
 	}
 
