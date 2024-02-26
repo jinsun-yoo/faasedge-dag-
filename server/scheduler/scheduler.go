@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"faasedge-dag/server/dag"
+	"log"
 )
 
 var nodeInfoMap = map[string]*NodeInfo {
@@ -23,18 +24,19 @@ func (bs *BaseScheduler) ScheduleDag(vDag *VDag) map[string]string {
 		keys = append(keys, k)
 	}
 
-	currNode := 0
+	currNodeIdx := 0
 
 	res := make(map[string]string)
 
 	for _, function := range vDag.DagDefinition.Functions {
-		nodeInfo := nodeInfoMap[keys[currNode]]
+		nodeInfo := nodeInfoMap[keys[currNodeIdx]]
 		pDagDeployment := baseFaasWrapper.DeployFunction(function.Name, nodeInfo)
 		res[function.Name] = pDagDeployment.Node.IpAddr + ":"+ pDagDeployment.ContainerPort
 		vDag.PDagMap[function.Name] = append(vDag.PDagMap[function.Name], pDagDeployment)
-		currNode = (currNode + 1) % len(nodeInfoMap)
+		currNodeIdx = (currNodeIdx + 1) % len(nodeInfoMap)
 	}
-
+	
+	log.Println(vDag)
 	vDagList[vDag.ClientId] = vDag
 	return res
 }
@@ -56,7 +58,10 @@ type NodeInfo struct {
 type VDag struct {
 	ClientId string
 	DagDefinition dag.Dag
-	PDagMap map[string][]*PDagDeployment
+
+	// mapping from function name to list of PDagDeployment objects.
+	// we store a list because one vDag can be mapped to multiple physical deployments
+	PDagMap map[string][]*PDagDeployment 
 }
 
 type PDagDeployment struct {
