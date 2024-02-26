@@ -41,32 +41,35 @@ func scheduleDagHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if dag, ok := dagList[dagName]; ok {
-		vdag := &scheduler.VDag {
+	dag, ok := dagList[dagName]
+	
+	if !ok {
+			http.Error(w, "DAG ("+dagName+") not found", http.StatusNotFound)
+			return
+	}
+
+	vdag := &scheduler.VDag{
 			ClientId:      clientId,
 			DagDefinition: *dag,
 			PDagMap:       make(map[string][]*scheduler.PDagDeployment),
-		}
-
-		scheduleResponse := scheduler.Scheduler.ScheduleDag(vdag)
-
-		yamlData, err := yaml.Marshal(scheduleResponse)
-		if err != nil {
-				http.Error(w, "Failed to marshal YAML", http.StatusInternalServerError)
-				return
-		}
-
-		w.Header().Set("Content-Type", "application/x-yaml")
-
-		_, err = w.Write(yamlData)
-		if err != nil {
-				http.Error(w, "Failed to write response", http.StatusInternalServerError)
-				return
-		}
-
-	} else {
-		http.Error(w, "DAG not found", http.StatusNotFound)
 	}
+	
+	scheduleResponse := scheduler.Scheduler.ScheduleDag(vdag)
+	
+	yamlData, err := yaml.Marshal(scheduleResponse)
+	if err != nil {
+			http.Error(w, "Failed to marshal YAML", http.StatusInternalServerError)
+			return
+	}
+	
+	w.Header().Set("Content-Type", "application/x-yaml")
+	
+	_, err = w.Write(yamlData)
+	if err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+			return
+	}
+	
 }
 
 func addDagHandler(w http.ResponseWriter, r *http.Request) {
