@@ -3,6 +3,7 @@ package scheduler
 import (
 	"faasedge-dag/server/dag"
 	"log"
+	"strconv"
 )
 
 var nodeInfoMap = map[string]*NodeInfo {
@@ -35,7 +36,7 @@ func (bs *BaseScheduler) ScheduleDag(vDag *VDag) map[string]string {
 		vDag.PDagMap[function.Name] = append(vDag.PDagMap[function.Name], pDagDeployment)
 		currNodeIdx = (currNodeIdx + 1) % len(nodeInfoMap)
 	}
-	
+
 	log.Println(vDag)
 	vDagList[vDag.ClientId] = vDag
 	return res
@@ -47,12 +48,25 @@ func (bfw BaseFaaSWrapper) DeployFunction(functionName string, node *NodeInfo) *
 	return &PDagDeployment{
 		ContainterName: functionName,
 		Node:           node,
-		ContainerPort:  "3000",
+		ContainerPort:  strconv.Itoa(node.GetNewPortNumber()),
 	}
 }
 
 type NodeInfo struct {
+	nextAvailablePort int
 	IpAddr string
+}
+
+func (n *NodeInfo) GetNewPortNumber() int {
+	var res int
+
+	if (n.nextAvailablePort == 0) {
+		n.nextAvailablePort = 3000
+	}
+
+	res = n.nextAvailablePort
+	n.nextAvailablePort++
+	return res
 }
 
 type VDag struct {
@@ -70,10 +84,15 @@ type PDagDeployment struct {
 	ContainerPort  string
 }
 
+// Scheduler interface 
 type DagScheduler interface {
+
+	// takes a vDag object and tries to deploy it to physical nodes
 	ScheduleDag(vdag *VDag) map[string]string
 }
 
+// Wrapper to interact with the cluster
 type FaaSWrapper interface {
+	// deploys a given function to a physical node
 	DeployFunction(functionName string, node *NodeInfo) *PDagDeployment
 }
