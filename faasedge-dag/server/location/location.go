@@ -1,8 +1,8 @@
 package location
 
 type Coord struct {
-	Latitude  float64
-	Longitude float64
+	x float64
+	y float64
 }
 
 type AreaOfInterest struct {
@@ -13,8 +13,8 @@ type AreaOfInterest struct {
 }
 
 func (aoi *AreaOfInterest) Belongs(coord Coord) bool {
-	if coord.Latitude >= aoi.lowerLeftCoord.Latitude && coord.Latitude <= aoi.upperRightCoord.Latitude &&
-		coord.Longitude >= aoi.lowerLeftCoord.Longitude && coord.Longitude <= aoi.upperRightCoord.Longitude {
+	if coord.x >= aoi.lowerLeftCoord.x && coord.x <= aoi.upperRightCoord.x &&
+		coord.y >= aoi.lowerLeftCoord.y && coord.y <= aoi.upperRightCoord.y {
 		return true
 	} else {
 		return false
