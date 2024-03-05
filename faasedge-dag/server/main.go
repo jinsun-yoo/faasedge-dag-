@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"faasedge-dag/server/dag"
+	"faasedge-dag/server/location"
 	"faasedge-dag/server/scheduler"
 	"fmt"
 	"io/ioutil"
@@ -17,10 +18,41 @@ type AddDagResponse struct {
 }
 
 var dagList = make(map[string]*dag.Dag)
+var locationTracker = location.LocationTracker{}
 
 func main() {
+
+	file, err := ioutil.ReadFile("map.json")
+	if err != nil {
+		log.Fatalf("Unable to read map.json: %v", err)
+	}
+
+	var mapData struct {
+		LowerLeft location.Coord `json:"lowerLeft"`
+		UpperRight location.Coord `json:"upperRight"`
+		AreasOfInterest []struct {
+			LowerLeft  location.Coord `json:"lowerLeft"`
+			UpperRight location.Coord `json:"upperRight"`
+		} `json:"areasOfInterest"`
+	}
+
+	err = json.Unmarshal(file, &mapData)
+	if err != nil {
+		log.Fatalf("Unable to unmarshal map.json: %v", err)
+	}
+
+	for _, area := range mapData.AreasOfInterest {
+		locationTracker.AreaOfInterestList = append(locationTracker.AreaOfInterestList, location.AreaOfInterest{
+			LowerLeftCoord:  area.LowerLeft,
+			UpperRightCoord: area.UpperRight,
+			Clients:         make(map[int]bool),
+			Clientlist:      []int{},
+		})
+	}
+
 	http.HandleFunc("/dag/add", addDagHandler)
 	http.HandleFunc("/dag/schedule", scheduleDagHandler)
+	http.HandleFunc("/dag/invoke", invokeDag)
 	fmt.Println("Server listening on :8080")
 	http.ListenAndServe(":8080", nil)
 }
@@ -102,4 +134,35 @@ func addDagHandler(w http.ResponseWriter, r *http.Request) {
 	dagList[decodedDag.Name] = decodedDag
 
 	w.Write(jsonResponse)
+}
+
+func invokeDag(w http.ResponseWriter, r *http.Request) {
+	clientId := r.Header.Get("Client-Id")
+	if clientId == "" {
+		http.Error(w, "Client-Id header is missing", http.StatusBadRequest)
+		return
+	}
+
+	queryParameters := r.URL.Query()
+	dagName := queryParameters.Get("dagName")
+
+	if dagName == "" {
+		log.Println("dagName query parameter is missing")
+		http.Error(w, "dagName query parameter is missing", http.StatusBadRequest)
+		return
+	}
+
+	dag, ok := dagList[dagName]
+	
+	if !ok {
+		http.Error(w, "DAG ("+dagName+") not found", http.StatusNotFound)
+		return
+	}
+
+	var coord location.Coord
+	if err := json.NewDecoder(r.Body).Decode(&coord); err != nil {
+		http.Error(w, "Error decoding coordinate", http.StatusBadRequest)
+		return
+	}
+
 }
