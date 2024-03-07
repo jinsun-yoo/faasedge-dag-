@@ -16,7 +16,7 @@ type FlowResult struct {
 
 func (dag *Dag) DescendantsFlow(startID string, callback FlowCallback) {
 	var function Function;
-	var found bool;
+	var found bool = false;
 	for _, dag := range dag.Functions {
 		if dag.Name == startID {
 			function = dag;
@@ -24,7 +24,7 @@ func (dag *Dag) DescendantsFlow(startID string, callback FlowCallback) {
 		}
 	}
 
-	if (found == false) {
+	if (!found) {
 		log.Println("Descendants flow error: couldn't find provided start ID")
 	}
 
