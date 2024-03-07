@@ -1,8 +1,8 @@
 package location
 
 type Coord struct {
-	x float64 `json:"x"`
-	y float64 `json:"y"`
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
 }
 
 type AreaOfInterest struct {
@@ -13,8 +13,8 @@ type AreaOfInterest struct {
 }
 
 func (aoi *AreaOfInterest) Belongs(coord Coord) bool {
-	if coord.x >= aoi.LowerLeftCoord.x && coord.x <= aoi.UpperRightCoord.x &&
-		coord.y >= aoi.LowerLeftCoord.y && coord.y <= aoi.UpperRightCoord.y {
+	if coord.X >= aoi.LowerLeftCoord.X && coord.X <= aoi.UpperRightCoord.X &&
+		coord.Y >= aoi.LowerLeftCoord.Y && coord.Y <= aoi.UpperRightCoord.Y {
 		return true
 	} else {
 		return false

@@ -18,7 +18,7 @@ def client_request(client_id, lowerLeft, upperRight):
         coord = generate_coordinate(lowerLeft, upperRight)
         headers = {'Content-Type': 'application/json', 'Client-Id': str(client_id)}
         data = {'coordinate': coord}
-        # response = requests.post('http://localhost:8000/dag/invoke?dagName=ok', headers=headers, json=data)
+        response = requests.post('http://localhost:8080/dag/invoke?dagName=ok', headers=headers, json=data)
         # print(f"Client {client_id} Response: {response.status_code}")
         print(f"client {client_id} calling endpoint with coords : {data}")
         time.sleep(random.randint(1, 5))  # simulate periodic requests

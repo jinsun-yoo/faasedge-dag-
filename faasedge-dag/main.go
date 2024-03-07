@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 
 	"gopkg.in/yaml.v2"
 )
@@ -40,6 +41,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to unmarshal map.json: %v", err)
 	}
+
+	fmt.Println(mapData.LowerLeft)
 
 	for _, area := range mapData.AreasOfInterest {
 		locationTracker.AreaOfInterestList = append(locationTracker.AreaOfInterestList, location.AreaOfInterest{
@@ -137,8 +140,9 @@ func addDagHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func invokeDag(w http.ResponseWriter, r *http.Request) {
-	clientId := r.Header.Get("Client-Id")
-	if clientId == "" {
+	log.Println("dag invocation")
+	clientIdRaw := r.Header.Get("Client-Id")
+	if clientIdRaw == "" {
 		http.Error(w, "Client-Id header is missing", http.StatusBadRequest)
 		return
 	}
@@ -152,17 +156,37 @@ func invokeDag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dag, ok := dagList[dagName]
+	_, ok := dagList[dagName]
 	
 	if !ok {
+		log.Println("DAG ("+dagName+") not found", http.StatusNotFound)
 		http.Error(w, "DAG ("+dagName+") not found", http.StatusNotFound)
 		return
 	}
 
-	var coord location.Coord
-	if err := json.NewDecoder(r.Body).Decode(&coord); err != nil {
+	var requestData struct {
+		Coordinate location.Coord `json:"coordinate"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
+		log.Println("Error decoding coordinate")
 		http.Error(w, "Error decoding coordinate", http.StatusBadRequest)
 		return
 	}
 
+	clientId, err := strconv.Atoi(clientIdRaw)
+
+	if err != nil {
+		log.Println("ClientId is not an integer")
+		http.Error(w, "ClientId is not an integer", http.StatusBadRequest)
+		return
+	}
+
+	locationTracker.RegisterLocation(clientId, requestData.Coordinate)
+
+	aoi := locationTracker.LookupAreaOfInterest(requestData.Coordinate)
+	log.Println("Area of interest: ", aoi)
+
+	relatedVehicles := locationTracker.RelatedVehicles(clientId)
+	log.Println("Related Vehicles: ", relatedVehicles)
 }
