@@ -52,6 +52,12 @@ func (bfw BaseFaaSWrapper) DeployFunction(functionName string, node *NodeInfo) *
 	}
 }
 
+
+func (bfw BaseFaaSWrapper) InvokeFunction(functionName string, node *NodeInfo) {
+	log.Println("Invoked function, ", functionName, "on node: ", node)
+}
+
+
 type NodeInfo struct {
 	nextAvailablePort int
 	IpAddr string
@@ -95,4 +101,5 @@ type DagScheduler interface {
 type FaaSWrapper interface {
 	// deploys a given function to a physical node
 	DeployFunction(functionName string, node *NodeInfo) *PDagDeployment
+	InvokeFunction(functionName string, node *NodeInfo)
 }
